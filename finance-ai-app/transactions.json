@@ -8,5 +8,15 @@
     "category": "food",
     "date": "2025-09-28",
     "notes": null
+  },
+  {
+    "id": "1759037150408",
+    "user_id": "DUMMY_USER_ID",
+    "amount": 4200,
+    "type": "income",
+    "description": "Paycheck",
+    "category": "salary",
+    "date": "2025-09-28",
+    "notes": null
   }
 ]

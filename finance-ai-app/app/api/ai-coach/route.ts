@@ -94,14 +94,14 @@ export async function POST(request: NextRequest) {
       financialContext = "Unable to access financial data at the moment.";
     }
 
-    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/mistral/mistral-7b-instruct-v0.1`
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-70b-instruct`
 
     const requestBody = {
       messages: [
         {
           role: "system",
           content: `You are a concise AI financial coach for a user. 
-Keep responses SHORT (2-3 sentences max). Be helpful but concise. Only talk about relevant things for what the user is asking. BE AN EXPERT OF ALL FINANCIAL ADVICE INCLUDING HOW TO BUILD WEALTH AND MUCH MORE AND BE MORE DETAILED IN RESPONSES. DO NOT ANSWERS ANYTHING NOT FINANCIALLY RELEVANT. This is their data: ${financialContext} `
+Keep responses SHORT (2-3 sentences max). Be helpful but concise. Only talk about relevant things for what the user is asking. BE AN EXPERT OF ALL FINANCIAL and MONEY ADVICE INCLUDING HOW TO BUILD WEALTH AND MUCH MORE AND BE MORE DETAILED IN RESPONSES. DO NOT ANSWERS ANYTHING NOT FINANCIALLY RELEVANT. This is their data: ${financialContext} `
         },
         { role: "user", content: message }
       ],
