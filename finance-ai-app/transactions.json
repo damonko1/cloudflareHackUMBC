@@ -1,0 +1,12 @@
+[
+  {
+    "id": "1759035615150",
+    "user_id": "DUMMY_USER_ID",
+    "amount": 50,
+    "type": "expense",
+    "description": "vfvbv",
+    "category": "food",
+    "date": "2025-09-28",
+    "notes": null
+  }
+]
