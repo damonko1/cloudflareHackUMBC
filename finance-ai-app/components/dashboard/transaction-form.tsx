@@ -27,6 +27,10 @@ interface ApiErrorResponse {
  
 }
 
+interface TransactionFormProps {
+  onTransactionAdded?: () => void;
+}
+
 const categories = {
   income: [
     { value: "salary", label: "Salary" },
@@ -48,7 +52,7 @@ const categories = {
   ],
 }
 
-export function TransactionForm() {
+export function TransactionForm({onTransactionAdded}: TransactionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<TransactionFormData>({
     amount: "",
@@ -108,6 +112,7 @@ export function TransactionForm() {
         toast({
             title: "Transaction added successfully",
             description: `${payload.type === "income" ? "Income" : "Expense"} of $${payload.amount.toFixed(2)} has been recorded.`,
+            
         });
 
         // Reset form
@@ -119,7 +124,7 @@ export function TransactionForm() {
             date: new Date().toISOString().split("T")[0],
             notes: "",
         });
-        
+      onTransactionAdded?.();
 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unknown error occurred.';

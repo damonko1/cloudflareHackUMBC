@@ -1,12 +1,16 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+
+export interface TransactionListRef{
+  refreshTransactions: () => void;
+}
 
 interface Transaction {
   id: string;
@@ -44,33 +48,38 @@ const categoryLabels: Record<string, string> = {
   other: "Other",
 }
 
-export function TransactionList() {
+export const TransactionList = forwardRef<TransactionListRef>((props, ref) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-        try {
-            const response = await fetch('/api/transactions');
-            
-            if (!response.ok) {
-                throw new Error(`Failed to fetch transactions (Status: ${response.status})`);
-            }
-            
-            const data = await response.json();
+  const fetchTransactions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/transactions');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch transactions (Status: ${response.status})`);
+      }
+      
+      const data = await response.json();
+      const apiResponse = data as TransactionApiResponse;
+      
+      setTransactions(apiResponse.transactions || []);
+      
+    } catch (error) {
+      console.error("Could not fetch data from D1 API:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-            const apiResponse = data as TransactionApiResponse;
-            
-            setTransactions(apiResponse.transactions || []);
-            
-        } catch (error) {
-            console.error("Could not fetch data from D1 API:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  useEffect(() => {
     fetchTransactions();
   }, []);
+
+  useImperativeHandle(ref, () => ({
+    refreshTransactions: fetchTransactions
+  }));
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -159,4 +168,6 @@ export function TransactionList() {
       </CardContent>
     </Card>
   )
-}
+});
+
+TransactionList.displayName = 'TransactionList';
