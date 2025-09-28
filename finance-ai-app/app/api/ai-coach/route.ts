@@ -5,16 +5,33 @@ interface Message {
   content: string
 }
 
+interface ChatRequest{
+  message: string; 
+  conversationHistory?: Message[]; 
+}
+
+interface CloudflareResponse {
+  result: {
+    response: string;
+  };
+  success: boolean;
+  errors?: any[];
+}
+
 export async function POST(request: NextRequest) {
   try {
+    
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim()
     const apiToken = process.env.CLOUDFLARE_API_TOKEN?.trim()
 
+
     if (!accountId || !apiToken) {
+      console.log("Missing credentials!");
       return NextResponse.json({ error: "Missing Cloudflare credentials" }, { status: 500 })
     }
 
-    const { message, conversationHistory = [] } = await request.json()
+    const { message, conversationHistory = [] } = await request.json() as ChatRequest
+    console.log("Received message:", message);
 
     if (!message) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 })
@@ -40,18 +57,13 @@ User's Financial Profile:
       .join("\n")
 
     const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-70b-instruct`
+    console.log("Calling URL:", url);
 
-    const cfRes = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: "system",
-            content: `You are a concise AI financial coach for a user. This is their data:
+    const requestBody = {
+      messages: [
+        {
+          role: "system",
+          content: `You are a concise AI financial coach for a user. This is their data:
 
 ${financialContext}
 
@@ -59,25 +71,41 @@ Previous conversation:
 ${conversationContext}
 
 Keep responses SHORT (2-3 sentences max). Be helpful but concise. Only talk about relevant things for what the user is asking. BE AN EXPERT OF ALL FINANCIAL ADVICE INCLUDING HOW TO BUILD WEALTH AND MUCH MORE AND BE MORE DETAILED IN RESPONSES. DO NOT ANSWERS ANYTHING NOT FINANCIALLY RELEVANT`
-          },
-          { role: "user", content: message }
-        ],
-        max_tokens: 100,  // Limits response to ~75 words
-        temperature: 0.7  // Optional: controls creativity (0-1)
-      }),
+        },
+        { role: "user", content: message }
+      ],
+      max_tokens: 100,
+      temperature: 0.7
+    };
+
+  
+    const cfRes = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     })
 
-    const data = await cfRes.json()
+
+    const data = await cfRes.json() as CloudflareResponse
+
     if (!cfRes.ok) {
+      console.error("Cloudflare API Error:", data);
       return NextResponse.json({ 
         error: `Cloudflare API ${cfRes.status}`, 
         details: data 
       }, { status: 500 })
     }
 
+  
     return NextResponse.json({ response: data.result.response })
   } catch (error) {
     console.error("Error in AI coach:", error)
-    return NextResponse.json({ error: "Failed to generate response" }, { status: 500 })
+    return NextResponse.json({ 
+      error: "Failed to generate response",
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
   }
 }
