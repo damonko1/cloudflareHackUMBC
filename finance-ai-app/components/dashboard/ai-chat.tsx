@@ -33,20 +33,22 @@ export function AIChat() {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
 
+  const prevMessagesLength = useRef(messages.length)  // ADD THIS LINE
+
+
   const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
-      }
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  useEffect(() => {
+useEffect(() => {
+  if (messages.length > prevMessagesLength.current) {
     scrollToBottom()
-  }, [messages])
+    prevMessagesLength.current = messages.length
+  }
+}, [messages])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -121,7 +123,7 @@ export function AIChat() {
 
   return (
     <Card className="flex flex-col h-[600px]">
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-4 flex-shrink-0">
         <CardTitle className="flex items-center gap-2">
           <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
             <Brain className="w-5 h-5 text-accent" />
@@ -131,16 +133,16 @@ export function AIChat() {
         <CardDescription>Get personalized financial advice and insights</CardDescription>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col gap-4">
-        <ScrollArea ref={scrollAreaRef} className="flex-1 pr-4">
-          <div className="space-y-4">
+     <CardContent className="flex-1 flex flex-col gap-4 min-h-0 overflow-hidden p-0">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 h-full px-4">
+          <div className="space-y-4 p-4 pt-13 pb-4">
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {message.role === "assistant" && (
-                  <Avatar className="w-8 h-8">
+                  <Avatar className="w-8 h-8 flex-shrink-0">
                     <AvatarFallback className="bg-accent/10">
                       <Brain className="w-4 h-4 text-accent" />
                     </AvatarFallback>
@@ -154,12 +156,12 @@ export function AIChat() {
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed">{message.content}</p>
+                  <p className="text-sm leading-relaxed break-words">{message.content}</p>
                   <p className="text-xs opacity-70 mt-2">{formatTime(message.timestamp)}</p>
                 </div>
 
                 {message.role === "user" && (
-                  <Avatar className="w-8 h-8">
+                  <Avatar className="w-8 h-8 flex-shrink-0">
                     <AvatarFallback className="bg-secondary">
                       <User className="w-4 h-4" />
                     </AvatarFallback>
@@ -170,7 +172,7 @@ export function AIChat() {
 
             {isLoading && (
               <div className="flex gap-3 justify-start">
-                <Avatar className="w-8 h-8">
+                <Avatar className="w-8 h-8 flex-shrink-0">
                   <AvatarFallback className="bg-accent/10">
                     <Brain className="w-4 h-4 text-accent" />
                   </AvatarFallback>
@@ -183,11 +185,13 @@ export function AIChat() {
                 </div>
               </div>
             )}
+            
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
         {messages.length === 1 && (
-          <div className="space-y-2">
+          <div className="space-y-2 flex-shrink-0">
             <p className="text-xs text-muted-foreground">Try asking:</p>
             <div className="flex flex-wrap gap-2">
               {suggestedQuestions.map((question, index) => (
@@ -206,7 +210,7 @@ export function AIChat() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2 flex-shrink-0">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}

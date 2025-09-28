@@ -1,0 +1,11 @@
+[[d1_databases]]
+binding = "DB"
+database_name = "FinanceDB"
+database_id = "a5d92e67-4367-447c-b36b-ee24a72f107d" # <--- Paste the actual ID here!
+
+
+# Add a configuration block for local development
+[env.dev]
+d1_databases = [
+  { binding = "DB", database_name = "FinanceDB" }
+]

@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button"
 import { Upload, FileText, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+interface UploadApiResponse {
+  success: boolean;
+  message: string;
+  results: any[]; 
+}
+
 export function UploadSection() {
   const [isUploading, setIsUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
@@ -62,6 +68,36 @@ export function UploadSection() {
       handleFiles(files)
     }
   }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files ? event.target.files[0] : null;
+
+    if (!file) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file); 
+
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error('File upload failed.');
+        }
+
+        const result = await response.json() as UploadApiResponse;
+        alert(`Upload successful! ${result.message}`);
+        
+    } catch (error) {
+        console.error("File upload error:", error);
+        alert('Error processing file upload.');
+    }
+};
 
   return (
     <Card>

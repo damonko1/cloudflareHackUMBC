@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
 
 interface Message {
   role: "user" | "assistant"
@@ -8,13 +7,19 @@ interface Message {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, conversationHistory } = await request.json()
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim()
+    const apiToken = process.env.CLOUDFLARE_API_TOKEN?.trim()
+
+    if (!accountId || !apiToken) {
+      return NextResponse.json({ error: "Missing Cloudflare credentials" }, { status: 500 })
+    }
+
+    const { message, conversationHistory = [] } = await request.json()
 
     if (!message) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 })
     }
 
-    // Create context from user's financial data (in a real app, this would come from the database)
     const financialContext = `
 User's Financial Profile:
 - Monthly Income: $6,500
@@ -26,44 +31,51 @@ User's Financial Profile:
 - Savings rate: 66% of income
 - Top expense category: Food & Dining
 - Recent trend: Expenses decreased by 3.1% from last month
-
-Recent Transactions:
-- Salary - Tech Corp: +$2,500
-- Grocery shopping at Whole Foods: -$85.32
-- Gas station fill-up: -$45.00
-- Monthly gym membership: -$120.00
-- Coffee shop - morning latte: -$28.75
 `
 
-    // Build conversation context
-    const conversationContext = conversationHistory
-      .slice(-5) // Keep last 5 messages for context
+    const messagesArray = Array.isArray(conversationHistory) ? conversationHistory : []
+    const conversationContext = messagesArray
+      .slice(-5)
       .map((msg: Message) => `${msg.role}: ${msg.content}`)
       .join("\n")
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
-      prompt: `You are an expert AI financial coach helping users manage their personal finances. You provide personalized, actionable advice based on their financial data.
+    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-70b-instruct`
+
+    const cfRes = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: `You are a concise AI financial coach for a user. This is their data:
 
 ${financialContext}
 
 Previous conversation:
 ${conversationContext}
 
-User's new question: ${message}
-
-Provide a helpful, personalized response that:
-1. References their specific financial situation when relevant
-2. Gives actionable advice
-3. Is encouraging and supportive
-4. Keeps responses concise but informative (2-3 paragraphs max)
-5. Uses specific numbers from their data when helpful
-6. Suggests concrete next steps when appropriate
-
-Respond as their personal financial coach in a friendly, professional tone.`,
+Keep responses SHORT (2-3 sentences max). Be helpful but concise. Only talk about relevant things for what the user is asking. BE AN EXPERT OF ALL FINANCIAL ADVICE INCLUDING HOW TO BUILD WEALTH AND MUCH MORE AND BE MORE DETAILED IN RESPONSES. DO NOT ANSWERS ANYTHING NOT FINANCIALLY RELEVANT`
+          },
+          { role: "user", content: message }
+        ],
+        max_tokens: 100,  // Limits response to ~75 words
+        temperature: 0.7  // Optional: controls creativity (0-1)
+      }),
     })
 
-    return NextResponse.json({ response: text })
+    const data = await cfRes.json()
+    if (!cfRes.ok) {
+      return NextResponse.json({ 
+        error: `Cloudflare API ${cfRes.status}`, 
+        details: data 
+      }, { status: 500 })
+    }
+
+    return NextResponse.json({ response: data.result.response })
   } catch (error) {
     console.error("Error in AI coach:", error)
     return NextResponse.json({ error: "Failed to generate response" }, { status: 500 })

@@ -14,11 +14,11 @@ const monthlyData = [
 ]
 
 const categoryData = [
-  { name: "Food & Dining", value: 680, color: "hsl(var(--chart-1))" },
-  { name: "Transportation", value: 420, color: "hsl(var(--chart-2))" },
-  { name: "Shopping", value: 350, color: "hsl(var(--chart-3))" },
-  { name: "Bills & Utilities", value: 520, color: "hsl(var(--chart-4))" },
-  { name: "Entertainment", value: 246, color: "hsl(var(--chart-5))" },
+  { name: "Food & Dining", value: 680, color: "#FF6B6B" },        // Red
+  { name: "Transportation", value: 420, color: "#4ECDC4" },       // Teal
+  { name: "Shopping", value: 350, color: "#45B7D1" },             // Blue
+  { name: "Bills & Utilities", value: 520, color: "#96CEB4" },    // Green
+  { name: "Entertainment", value: 246, color: "#FFEAA7" },        // Yellow
 ]
 
 const chartConfig = {
