@@ -21,6 +21,12 @@ interface TransactionFormData {
   notes: string
 }
 
+interface ApiErrorResponse {
+  error?: string; 
+  message?: string; 
+ 
+}
+
 const categories = {
   income: [
     { value: "salary", label: "Salary" },
@@ -58,46 +64,74 @@ export function TransactionForm() {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-      // Reset category when type changes
       ...(field === "type" && { category: "" }),
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    // Prepare the payload 
+    const payload = {
+        amount: parseFloat(formData.amount), 
+        type: formData.type,
+        description: formData.description,
+        category: formData.category,
+        date: formData.date,
+        notes: formData.notes, 
+    };
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+        const response = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
 
-      // Here you would typically send the data to your API
-      console.log("Transaction data:", formData)
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => ({})); 
+          const errorData = errorBody as ApiErrorResponse; 
+          
+          console.error("API Error Body:", errorData);
 
-      toast({
-        title: "Transaction added successfully",
-        description: `${formData.type === "income" ? "Income" : "Expense"} of $${formData.amount} has been recorded.`,
-      })
+          const errorMessage = errorData.error || errorData.message || `HTTP Error: ${response.status}`;
+          
+          throw new Error(errorMessage);
+      }
+        
+        const result = await response.json(); 
 
-      // Reset form
-      setFormData({
-        amount: "",
-        type: "",
-        description: "",
-        category: "",
-        date: new Date().toISOString().split("T")[0],
-        notes: "",
-      })
+
+        toast({
+            title: "Transaction added successfully",
+            description: `${payload.type === "income" ? "Income" : "Expense"} of $${payload.amount.toFixed(2)} has been recorded.`,
+        });
+
+        // Reset form
+        setFormData({
+            amount: "",
+            type: "",
+            description: "",
+            category: "",
+            date: new Date().toISOString().split("T")[0],
+            notes: "",
+        });
+        
+
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add transaction. Please try again.",
-        variant: "destructive",
-      })
+      const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+        toast({
+            title: "Error adding transaction",
+            description: `Details: ${error instanceof Error ? error.message : 'An unknown error occurred.'}`,
+            variant: "destructive",
+        });
     } finally {
-      setIsSubmitting(false)
+        setIsSubmitting(false);
     }
-  }
+}
 
   const availableCategories = formData.type ? categories[formData.type as keyof typeof categories] : []
 
