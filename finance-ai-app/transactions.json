@@ -18,5 +18,25 @@
     "category": "salary",
     "date": "2025-09-28",
     "notes": null
+  },
+  {
+    "id": "1759038223332",
+    "user_id": "DUMMY_USER_ID",
+    "amount": 1000,
+    "type": "expense",
+    "description": "shoe",
+    "category": "other-expense",
+    "date": "2025-09-28",
+    "notes": null
+  },
+  {
+    "id": "1759038289836",
+    "user_id": "DUMMY_USER_ID",
+    "amount": 90,
+    "type": "expense",
+    "description": "fyi",
+    "category": "entertainment",
+    "date": "2025-10-10",
+    "notes": null
   }
 ]
